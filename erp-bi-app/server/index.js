@@ -49,7 +49,39 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || "Internal server error." });
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`✅ ERP BI server listening on http://localhost:${PORT}`);
-});
+const fs = require('fs');
+const path = require('path');
+
+// Automatically run schema if tables don't exist
+async function initDb() {
+  try {
+    // Check if users table already exists to prevent wiping data
+    const res = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'users'
+      );
+    `);
+    
+    if (!res.rows[0].exists) {
+      console.log("Database empty. Initializing schema...");
+      const schemaPath = path.join(__dirname, 'db', 'schema.sql');
+      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+      await pool.query(schemaSql);
+      console.log("Schema initialized successfully.");
+
+      // Run database seeds to add demo accounts
+      const seedPath = path.join(__dirname, 'db', 'seed.js');
+      if (fs.existsSync(seedPath)) {
+        console.log("Running database seeds...");
+        // This will execute your seed file directly
+        require(seedPath); 
+        console.log("Database seeding completed.");
+      }
+    }
+  } catch (err) {
+    console.error("Error initializing database on startup:", err);
+  }
+}
+
+initDb();
