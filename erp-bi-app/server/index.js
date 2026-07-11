@@ -49,6 +49,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message || "Internal server error." });
 });
 
+const pool = require('./db/pool');
 const fs = require('fs');
 const path = require('path');
 
