@@ -85,4 +85,13 @@ async function initDb() {
   }
 }
 
-initDb();
+const PORT = process.env.PORT || 10000;
+
+initDb().then(() => {
+  app.listen(PORT, () => {
+    console.log(`ERP BI server listening on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error("Failed to start server due to database init error:", err);
+});
+
